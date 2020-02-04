@@ -1,0 +1,50 @@
+# Standards: 1.2
+---
+- name: Backup the contents of a LAMP website + take sqldump of db
+  hosts: webservers
+  become: true
+  become_method: dzdo
+  gather_facts: true
+
+  vars:
+    base_dir: /data/vhosts
+    site_name: rossfarm.dev.gov.ns.ca
+    site_path: "{{ base_dir }}/{{ site_name }}"
+#    site_name: ANSTEST
+    group_name: cito-sfss
+    rundeck_name: rundeck
+    apache_name: apache
+    dest_dir: /data/vhosts/BACKUP
+
+  tasks:
+
+    - name: Get timestamp from the system
+      shell: "date +%y%m%d%H%M%S"
+      register: tstamp
+
+    - name: Set variables
+      set_fact:
+        backup_time: "{{ tstamp.stdout[0:12] }}"
+
+    - name: archive directory contents
+      archive:
+        path: "{{ base_dir }}/{{ site_name }}/"
+        dest: "{{ dest_dir }}/{{ site_name }}-{{ backup_time }}.tar"
+        remote_src: yes
+        format: tar
+        owner: "{{ rundeck_name }}"
+
+    - name: Set variables
+      set_fact:
+        sqldump_file: "{{ site_name }}-{{ backup_time }}.sql"
+
+    - name: Backup the db
+      shell: "cd {{ site_path }} ; /usr/local/sbin/drush sql-dump --result-file={{ sqldump_file }} ; mv {{ sqldump_file }} {{ dest_dir }}"
+#      shell: "cd {{ site_path }} ; /usr/local/sbin/drush sql-dump --result-file=TESTING.sql ; mv TESTING.sql {{ dest_dir }}"
+
+    - name: Change ownership
+      file:
+        path: "{{ dest_dir }}/{{ sqldump_file }}"
+        owner: "{{ rundeck_name }}"
+        group: root
+        mode: '0600'

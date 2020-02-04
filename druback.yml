@@ -8,7 +8,7 @@
 
   vars:
     base_dir: /data/vhosts
-    site_name: rossfarm.dev.gov.ns.ca
+    site_name: sitename.u.r.l
     site_path: "{{ base_dir }}/{{ site_name }}"
 #    site_name: ANSTEST
     group_name: cito-sfss
@@ -40,7 +40,6 @@
 
     - name: Backup the db
       shell: "cd {{ site_path }} ; /usr/local/sbin/drush sql-dump --result-file={{ sqldump_file }} ; mv {{ sqldump_file }} {{ dest_dir }}"
-#      shell: "cd {{ site_path }} ; /usr/local/sbin/drush sql-dump --result-file=TESTING.sql ; mv TESTING.sql {{ dest_dir }}"
 
     - name: Change ownership
       file:
